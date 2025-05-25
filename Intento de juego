@@ -1,1 +1,160 @@
+import random
+import json
+import os
+
+# Datos del juego
+PERSONAJES = {
+    "Profesor Plum": {
+        "descripcion": "Académico en química, fue acusado de robar una fórmula de Blackwood.",
+        "motivo": "Fue humillado públicamente por Blackwood."
+    },
+    "Señorita Escarlata": {
+        "descripcion": "Actriz elegante y decidida. Fue amante de Blackwood.",
+        "motivo": "Blackwood la dejó fuera del testamento."
+    },
+    "Coronel Mostaza": {
+        "descripcion": "Veterano rudo y resentido. Arruinado por una licitación perdida.",
+        "motivo": "Blackwood lo desbancó con maniobras sucias."
+    },
+    "Doctor Verde": {
+        "descripcion": "Médico privado, reservado y meticuloso.",
+        "motivo": "Quería evitar que se revelaran secretos médicos."
+    }
+}
+
+ARMAS = {
+    "Candelabro": "Pesado y de bronce. Un candelabro falta del salón.",
+    "Cuchillo": "Cuchillo grande de cocina, desaparecido misteriosamente.",
+    "Pistola": "Antigua reliquia familiar, con munición real.",
+    "Cuerda": "Una cuerda gruesa faltaba en el salón."
+}
+
+LUGARES = {
+    "Biblioteca": "Puerta entreabierta, libros revueltos.",
+    "Cocina": "El cuchillo faltaba, y el agua hervía sin supervisión.",
+    "Salón": "Un candelabro en el suelo, abollado.",
+    "Jardín": "Huellas de barro llevaban desde el jardín al interior."
+}
+
+INDICIOS = [
+    "Había barro en el pasillo del jardín.",
+    "Restos de cera en la alfombra del estudio.",
+    "Una cuerda estaba tirada junto al sillón del salón.",
+    "Faltaba el cuchillo del centro de la cocina.",
+    "La ventana de la biblioteca estaba abierta.",
+    "La autopsia reveló un golpe contundente en la nuca, sin signos de lucha."
+]
+
+ARCHIVO_PARTIDA = "partida_guardada.json"
+
+class Clue:
+    def __init__(self):
+        self.secreto = {
+            "personaje": random.choice(list(PERSONAJES.keys())),
+            "arma": random.choice(list(ARMAS.keys())),
+            "lugar": random.choice(list(LUGARES.keys()))
+        }
+        self.intentos = 0
+        # Escoge dos pistas diferentes
+        self.pistas = random.sample(INDICIOS, 2)
+        self.terminado = False
+
+    def sugerir(self, personaje, arma, lugar):
+        self.intentos += 1
+        pistas = []
+        if personaje != self.secreto["personaje"]:
+            pistas.append("El personaje no es correcto.")
+        if arma != self.secreto["arma"]:
+            pistas.append("El arma no es correcta.")
+        if lugar != self.secreto["lugar"]:
+            pistas.append("El lugar no es correcto.")
+        if not pistas:
+            self.terminado = True
+            return f"\n✨ ¡Correcto! Resolviste el caso en {self.intentos} intentos."
+        return "\nPistas:\n" + "\n".join(pistas)
+
+    def guardar(self):
+        with open(ARCHIVO_PARTIDA, "w") as f:
+            json.dump({"secreto": self.secreto, "intentos": self.intentos, "pistas": self.pistas}, f)
+        print("Partida guardada.")
+
+    def cargar(self):
+        if os.path.exists(ARCHIVO_PARTIDA):
+            with open(ARCHIVO_PARTIDA, "r") as f:
+                data = json.load(f)
+                self.secreto = data["secreto"]
+                self.intentos = data["intentos"]
+                self.pistas = data["pistas"]
+            print("Partida cargada.")
+            return True
+        return False
+
+def historia():
+    print("""
+⛪ ESCENA DEL CRIMEN - Mansión Blackwood, 1952
+
+Una tormenta azota la noche. Lord Blackwood yace muerto en su estudio.
+Tú, detective experimentado, debes desentrañar el misterio.
+Todos los presentes tenían motivos...
+Descubre QUIÉN lo hizo, CON QUÉ ARMA y DÓNDE. 
+""")
+
+def jugar(juego):
+    print("\n🔍 Indicios clave:")
+    for i, pista in enumerate(juego.pistas, 1):
+        print(f"{i}. {pista}")
+    while not juego.terminado:
+        print(f"\nIntento #{juego.intentos + 1}")
+
+        print("\nSospechosos:")
+        for p, datos in PERSONAJES.items():
+            print(f"- {p}: {datos['descripcion']} Motivo: {datos['motivo']}")
+        personaje = input("\nElige un sospechoso: ")
+
+        print("\nArmas:")
+        for arma, desc in ARMAS.items():
+            print(f"- {arma}: {desc}")
+        arma = input("\nElige un arma: ")
+
+        print("\nLugares:")
+        for lugar, desc in LUGARES.items():
+            print(f"- {lugar}: {desc}")
+        lugar = input("\nElige un lugar: ")
+
+        print(f"\nTu hipótesis: {personaje} con el {arma} en la {lugar}.")
+        print(juego.sugerir(personaje, arma, lugar))
+
+        if not juego.terminado:
+            if input("\n¿Deseas guardar la partida? (s/n): ").lower() == "s":
+                juego.guardar()
+
+    print("\n✨ Has resuelto el caso. Gracias por tu agudeza, detective.\n")
+
+def menu():
+    while True:
+        print("\n=== MENÚ PRINCIPAL ===")
+        print("1. Nueva partida")
+        print("2. Cargar partida")
+        print("3. Salir")
+        opcion = input("Elige una opción: ")
+
+        if opcion == "1":
+            historia()
+            juego = Clue()
+            jugar(juego)
+        elif opcion == "2":
+            juego = Clue()
+            if juego.cargar():
+                historia()
+                jugar(juego)
+            else:
+                print("No hay partida guardada disponible.")
+        elif opcion == "3":
+            print("Adios, detective.")
+            break
+        else:
+            print("Opción inválida.")
+
+if __name__ == "__main__":
+    menu()
 
